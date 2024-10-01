@@ -1,0 +1,24 @@
+
+{
+    "users": [
+        {
+            "id": 1,
+            "name": "David",
+            "age": 30
+        },
+        {
+            "name": "Michael",
+            "id": 2,
+            "age": 45
+        }
+    ],
+    "markers": [
+        {
+            "id": 1,
+            "creator": 1,
+            "type": "",
+            "latitude": 37.33080974,
+            "longitude": 122.03057107
+        }
+    ]
+}

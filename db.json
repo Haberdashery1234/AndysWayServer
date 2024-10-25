@@ -15,8 +15,7 @@
     "markers": [
         {
             "id": 1,
-            "creator": 1,
-            "type": "",
+            "type": "water",
             "latitude": 37.33080974,
             "longitude": 122.03057107
         }

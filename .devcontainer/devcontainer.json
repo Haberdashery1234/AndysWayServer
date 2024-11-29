@@ -1,0 +1,17 @@
+{
+    "name": "Swift 6.0",
+    "dockerComposeFile": "docker-compose.yaml",
+	"service": "app",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "sswg.swift-lang"
+            ],
+            "settings": {
+                "lldb.library": "/usr/lib/liblldb.so"
+            }
+        }
+    },
+    "forwardPorts": [8080, 5432]
+}

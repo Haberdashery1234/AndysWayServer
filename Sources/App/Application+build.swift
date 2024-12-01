@@ -22,7 +22,7 @@ typealias AppRequestContext = BasicRequestContext
 public func buildApplication(_ arguments: some AppArguments) async throws -> some ApplicationProtocol {
     let environment = Environment()
     let logger = {
-        var logger = Logger(label: "todos-postgres-tutorial")
+        var logger = Logger(label: "andys-way-server")
         logger.logLevel =
             arguments.logLevel ??
             environment.get("LOG_LEVEL").map { Logger.Level(rawValue: $0) ?? .info } ??
@@ -40,31 +40,31 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
     let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
     logger.info("Starting application - \(operatingSystem) \(osVersion)")
 
-    var postgresRepository: TodoPostgresRepository?
+    var postgresRepository: MarkerPostgresRepository?
     let router: Router<AppRequestContext>
     if !arguments.inMemoryTesting {
         let config = PostgresClient.Configuration(
                 host: environment.get("POSTGRES_HOST") ?? "localhost",
-                username: environment.get("POSTGRES_USER") ?? "todos",
+                username: environment.get("POSTGRES_USER") ?? "markers",
                 password: environment.get("POSTGRES_PASSWORD") ?? "",
-                database: environment.get("POSTGRES_DB") ?? "todos",
+                database: environment.get("POSTGRES_DB") ?? "markers",
                 tls: .disable
             )
         let client = PostgresClient(
             configuration: config,
             backgroundLogger: logger
         )
-        let repository = TodoPostgresRepository(client: client, logger: logger)
+        let repository = MarkerPostgresRepository(client: client, logger: logger)
         postgresRepository = repository
         router = buildRouter(repository)
     } else {
-        router = buildRouter(TodoMemoryRepository())
+        router = buildRouter(MarkerMemoryRepository())
     }
     var app = Application(
         router: router,
         configuration: .init(
             address: .hostname(arguments.hostname, port: arguments.port),
-            serverName: "todos-postgres-tutorial"
+            serverName: "andys-way-server"
         ),
         logger: logger
     )
@@ -80,7 +80,7 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
 }
 
 /// Build router
-func buildRouter(_ repository: some TodoRepository) -> Router<AppRequestContext> {
+func buildRouter(_ repository: some MarkerRepository) -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     // Add middleware
     router.addMiddleware {
@@ -91,6 +91,6 @@ func buildRouter(_ repository: some TodoRepository) -> Router<AppRequestContext>
     router.get("/health") { _, _ -> HTTPResponse.Status in
         return .ok
     }
-    router.addRoutes(TodoController(repository: repository).endpoints, atPath: "/todos")
+    router.addRoutes(MarkerController(repository: repository).endpoints, atPath: "/markers")
     return router
 }

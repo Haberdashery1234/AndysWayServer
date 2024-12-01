@@ -1,17 +1,17 @@
 import Foundation
 import Hummingbird
 
-struct Todo {
-    // Todo ID
+struct Marker {
+    // Marker ID
     var id: UUID
     // Title
     var title: String
     // Order number
     var order: Int?
-    // URL to get this ToDo
+    // URL to get this Marker
     var url: String
-    // Is Todo complete
+    // Is Marker complete
     var completed: Bool?
 }
 
-extension Todo: ResponseEncodable, Decodable, Equatable {}
+extension Marker: ResponseEncodable, Decodable, Equatable {}

@@ -12,26 +12,29 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
             """
             CREATE TABLE IF NOT EXISTS markers (
                 "id" uuid PRIMARY KEY,
-                "title" text NOT NULL,
-                "order" integer,
-                "completed" boolean,
-                "url" text
+                "marker_type" text NOT NULL,
+                "latitude" float,
+                "longitude" float
             )
             """,
             logger: self.logger
         )
     }
 
-    /// Create markers.
-    func create(title: String, order: Int?, urlPrefix: String) async throws -> Marker {
+    /// Create marker.
+    func create(marker_type: Marker_Type, latitude: Float, longitude: Float) async throws -> Marker {
+        logger.info("Create marker: \(marker_type) : \(latitude) : \(longitude)")
         let id = UUID()
-        let url = urlPrefix + id.uuidString
         // The string interpolation is building a PostgresQuery with bindings and is safe from sql injection
-        try await self.client.query(
-            "INSERT INTO markers (id, title, url, \"order\") VALUES (\(id), \(title), \(url), \(order));",
-            logger: self.logger
-        )
-        return Marker(id: id, title: title, order: order, url: url, completed: nil)
+        do {
+            try await self.client.query(
+                "INSERT INTO markers (marker_id, marker_type, latitude, longitude, created_at) VALUES (\(id), \(marker_type.rawValue), \(latitude), \(longitude), \(Date.now));",
+                logger: self.logger
+            ) 
+        } catch {
+            logger.error("\(String(reflecting: error))")
+        }
+        return Marker(id: id, marker_type: marker_type, latitude: latitude, longitude: longitude)
     }
 
     /// Get marker.
@@ -39,12 +42,16 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
         // The string interpolation is building a PostgresQuery with bindings and is safe from sql injection
         let stream = try await self.client.query(
             """
-            SELECT "id", "title", "order", "url", "completed" FROM markers WHERE "id" = \(id)
+            SELECT * FROM markers WHERE "id" = \(id)
             """,
             logger: self.logger
         )
-        for try await(id, title, order, url, completed) in stream.decode((UUID, String, Int?, String, Bool?).self, context: .default) {
-            return Marker(id: id, title: title, order: order, url: url, completed: completed)
+        do {
+            for try await(id, marker_type, latitude, longitude) in stream.decode((UUID, String, Float, Float).self, context: .default) {
+                return Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude)
+            }
+        } catch {
+            logger.error("\(String(reflecting: error))")
         }
         return nil
     }
@@ -53,47 +60,52 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
     func list() async throws -> [Marker] {
         let stream = try await self.client.query(
             """
-            SELECT "id", "title", "order", "url", "completed" FROM markers
+            SELECT * FROM markers
             """,
             logger: self.logger
         )
         var markers: [Marker] = []
-        for try await(id, title, order, url, completed) in stream.decode((UUID, String, Int?, String, Bool?).self, context: .default) {
-            let marker = Marker(id: id, title: title, order: order, url: url, completed: completed)
-            markers.append(marker)
+        do {
+            for try await(id, marker_type, latitude, longitude) in stream.decode((UUID, String, Float, Float).self, context: .default) {
+                let marker = Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude)
+                markers.append(marker)
+            }
+        } catch {
+            logger.error("\(String(reflecting: error))")
         }
         return markers
     }
 
     /// Update marker. Returns updated marker if successful
-    func update(id: UUID, title: String?, order: Int?, completed: Bool?) async throws -> Marker? {
+    func update(id: UUID, marker_type: Marker_Type?, latitude: Float?, longitude: Float?) async throws -> Marker? {
+        logger.info("Update marker: \(id) : \(marker_type) : \(latitude) : \(longitude)")
         let query: PostgresQuery?
         // UPDATE query. Work out query based on whick values are not nil
         // The string interpolation is building a PostgresQuery with bindings and is safe from sql injection
-        if let title {
-            if let order {
-                if let completed {
-                    query = "UPDATE markers SET title = \(title), order = \(order), completed = \(completed) WHERE id = \(id)"
+        if let marker_type {
+            if let latitude {
+                if let longitude {
+                    query = "UPDATE markers SET marker_type = \(marker_type.rawValue), latitude = \(latitude), longitude = \(longitude) WHERE id = \(id)"
                 } else {
-                    query = "UPDATE markers SET title = \(title), order = \(order) WHERE id = \(id)"
+                    query = "UPDATE markers SET marker_type = \(marker_type.rawValue), latitude = \(latitude) WHERE id = \(id)"
                 }
             } else {
-                if let completed {
-                    query = "UPDATE markers SET title = \(title), completed = \(completed) WHERE id = \(id)"
+                if let longitude {
+                    query = "UPDATE markers SET marker_type = \(marker_type.rawValue), longitude = \(longitude) WHERE id = \(id)"
                 } else {
-                    query = "UPDATE markers SET title = \(title) WHERE id = \(id)"
+                    query = "UPDATE markers SET marker_type = \(marker_type.rawValue) WHERE id = \(id)"
                 }
             }
         } else {
-            if let order {
-                if let completed {
-                    query = "UPDATE markers SET order = \(order), completed = \(completed) WHERE id = \(id)"
+            if let latitude {
+                if let longitude {
+                    query = "UPDATE markers SET latitude = \(latitude), longitude = \(longitude) WHERE id = \(id)"
                 } else {
-                    query = "UPDATE markers SET order = \(order) WHERE id = \(id)"
+                    query = "UPDATE markers SET latitude = \(latitude) WHERE id = \(id)"
                 }
             } else {
-                if let completed {
-                    query = "UPDATE markers SET completed = \(completed) WHERE id = \(id)"
+                if let longitude {
+                    query = "UPDATE markers SET longitude = \(longitude) WHERE id = \(id)"
                 } else {
                     query = nil
                 }
@@ -111,8 +123,8 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
             """,
             logger: self.logger
         )
-        for try await(id, title, order, url, completed) in stream.decode((UUID, String, Int?, String, Bool?).self, context: .default) {
-            return Marker(id: id, title: title, order: order, url: url, completed: completed)
+        for try await(id, marker_type, latitude, longitude) in stream.decode((UUID, String, Float, Float).self, context: .default) {
+            return Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude)
         }
         return nil
     }

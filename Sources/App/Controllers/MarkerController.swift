@@ -32,10 +32,23 @@ struct MarkerController<Repository: MarkerRepository> {
         }
     }
 
+    struct CreateRequest: Decodable {
+        let marker_type: String
+        let latitude: Float
+        let longitude: Float
+    }
+
+    /// Create marker entrypoint
+    @Sendable func create(request: Request, context: some RequestContext) async throws -> EditedResponse<Marker> {
+        let request = try await request.decode(as: CreateRequest.self, context: context)
+        let marker = try await self.repository.create(marker_type: Marker_Type(rawValue: request.marker_type)!, latitude: request.latitude, longitude: request.longitude)
+        return EditedResponse(status: .created, response: marker)
+    }
+
     struct UpdateRequest: Decodable {
-        let title: String?
-        let order: Int?
-        let completed: Bool?
+        let marker_type: String?
+        let latitude: Float?
+        let longitude: Float?
     }
 
     /// Update marker entrypoint
@@ -44,9 +57,9 @@ struct MarkerController<Repository: MarkerRepository> {
         let request = try await request.decode(as: UpdateRequest.self, context: context)
         guard let marker = try await self.repository.update(
             id: id,
-            title: request.title,
-            order: request.order,
-            completed: request.completed
+            marker_type: Marker_Type(rawValue: request.marker_type!) ?? nil,
+            latitude: request.latitude,
+            longitude: request.longitude
         ) else {
             throw HTTPError(.badRequest)
         }
@@ -62,17 +75,5 @@ struct MarkerController<Repository: MarkerRepository> {
     /// Get list of markers entrypoint
     @Sendable func list(request: Request, context: some RequestContext) async throws -> [Marker] {
         return try await self.repository.list()
-    }
-
-    struct CreateRequest: Decodable {
-        let title: String
-        let order: Int?
-    }
-
-    /// Create marker entrypoint
-    @Sendable func create(request: Request, context: some RequestContext) async throws -> EditedResponse<Marker> {
-        let request = try await request.decode(as: CreateRequest.self, context: context)
-        let marker = try await self.repository.create(title: request.title, order: request.order, urlPrefix: "http://localhost:8080/markers/")
-        return EditedResponse(status: .created, response: marker)
     }
 }

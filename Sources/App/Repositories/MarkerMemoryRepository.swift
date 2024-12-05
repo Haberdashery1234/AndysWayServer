@@ -9,10 +9,9 @@ actor MarkerMemoryRepository: MarkerRepository {
     }
 
     /// Create marker.
-    func create(title: String, order: Int?, urlPrefix: String) async throws -> Marker {
+    func create(marker_type: Marker_Type, latitude: Float, longitude: Float) async throws -> Marker {
         let id = UUID()
-        let url = urlPrefix + id.uuidString
-        let marker = Marker(id: id, title: title, order: order, url: url, completed: false)
+        let marker = Marker(id: id, marker_type: marker_type, latitude: latitude, longitude: longitude)
         self.markers[id] = marker
         return marker
     }
@@ -28,16 +27,16 @@ actor MarkerMemoryRepository: MarkerRepository {
     }
 
     /// Update marker. Returns updated marker if successful
-    func update(id: UUID, title: String?, order: Int?, completed: Bool?) async throws -> Marker? {
+    func update(id: UUID, marker_type: Marker_Type?, latitude: Float?, longitude: Float?) async throws -> Marker? {
         if var marker = self.markers[id] {
-            if let title {
-                marker.title = title
+            if let marker_type {
+                marker.marker_type = marker_type
             }
-            if let order {
-                marker.order = order
+            if let latitude {
+                marker.latitude = latitude
             }
-            if let completed {
-                marker.completed = completed
+            if let longitude {
+                marker.longitude = longitude
             }
             self.markers[id] = marker
             return marker

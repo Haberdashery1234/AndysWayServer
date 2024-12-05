@@ -26,7 +26,7 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
         logger.logLevel =
             arguments.logLevel ??
             environment.get("LOG_LEVEL").map { Logger.Level(rawValue: $0) ?? .info } ??
-            .info
+            .debug
         return logger
     }()
 

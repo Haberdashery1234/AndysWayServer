@@ -23,7 +23,6 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
 
     /// Create marker.
     func create(marker_type: Marker_Type, latitude: Float, longitude: Float) async throws -> Marker {
-        logger.info("Create marker: \(marker_type) : \(latitude) : \(longitude)")
         let id = UUID()
         // The string interpolation is building a PostgresQuery with bindings and is safe from sql injection
         do {
@@ -78,7 +77,6 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
 
     /// Update marker. Returns updated marker if successful
     func update(id: UUID, marker_type: Marker_Type?, latitude: Float?, longitude: Float?) async throws -> Marker? {
-        logger.info("Update marker: \(id) : \(marker_type) : \(latitude) : \(longitude)")
         let query: PostgresQuery?
         // UPDATE query. Work out query based on whick values are not nil
         // The string interpolation is building a PostgresQuery with bindings and is safe from sql injection

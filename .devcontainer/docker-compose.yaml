@@ -7,9 +7,9 @@ services:
       - postgres
     environment:
       POSTGRES_HOST: postgres
-      POSTGRES_DB: todos
-      POSTGRES_USER: todos_app
-      POSTGRES_PASSWORD: some_secret_password
+      POSTGRES_DB: markers
+      POSTGRES_USER: markers_app
+      POSTGRES_PASSWORD: password123
     command: sleep infinity
 
   postgres:
@@ -18,9 +18,9 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: todos
-      POSTGRES_USER: todos_app
-      POSTGRES_PASSWORD: some_secret_password
+      POSTGRES_DB: markers
+      POSTGRES_USER: markers_app
+      POSTGRES_PASSWORD: password123
     ports:
       - 5432:5432
 

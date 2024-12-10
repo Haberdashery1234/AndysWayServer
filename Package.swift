@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "todos-postgres-tutorial",
+    name: "andys-way-server",
     platforms: [.macOS(.v14), .iOS(.v17), .tvOS(.v17)],
     products: [
         .executable(name: "App", targets: ["App"]),

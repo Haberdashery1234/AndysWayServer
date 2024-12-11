@@ -20,6 +20,8 @@ struct Marker {
     var latitude: Float
     // Marker Longitude
     var longitude: Float
+    // Creating user
+    var created_by: UUID
 }
 
 extension Marker: ResponseEncodable, Decodable, Equatable {}

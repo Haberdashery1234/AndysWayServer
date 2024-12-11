@@ -11,10 +11,13 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
         try await self.client.query(
             """
             CREATE TABLE IF NOT EXISTS markers (
-                "id" uuid PRIMARY KEY,
+                "marker_id" uuid PRIMARY KEY,
                 "marker_type" text NOT NULL,
                 "latitude" float,
-                "longitude" float
+                "longitude" float,
+                "created_by" UUID,
+                "created_on" timestamptz,
+                "last_updated" timestamptz
             )
             """,
             logger: self.logger
@@ -22,18 +25,18 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
     }
 
     /// Create marker.
-    func create(marker_type: Marker_Type, latitude: Float, longitude: Float) async throws -> Marker {
+    func create(marker_type: Marker_Type, latitude: Float, longitude: Float, created_by: UUID) async throws -> Marker {
         let id = UUID()
         // The string interpolation is building a PostgresQuery with bindings and is safe from sql injection
         do {
             try await self.client.query(
-                "INSERT INTO markers (marker_id, marker_type, latitude, longitude, created_at) VALUES (\(id), \(marker_type.rawValue), \(latitude), \(longitude), \(Date.now));",
+                "INSERT INTO markers (marker_id, marker_type, latitude, longitude, created_by, created_on) VALUES (\(id), \(marker_type.rawValue), \(latitude), \(longitude), \(created_by), \(Date.now));",
                 logger: self.logger
             ) 
         } catch {
             logger.error("\(String(reflecting: error))")
         }
-        return Marker(id: id, marker_type: marker_type, latitude: latitude, longitude: longitude)
+        return Marker(id: id, marker_type: marker_type, latitude: latitude, longitude: longitude, created_by: created_by)
     }
 
     /// Get marker.
@@ -46,8 +49,8 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
             logger: self.logger
         )
         do {
-            for try await(id, marker_type, latitude, longitude) in stream.decode((UUID, String, Float, Float).self, context: .default) {
-                return Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude)
+            for try await(id, marker_type, latitude, longitude, created_by) in stream.decode((UUID, String, Float, Float, UUID).self, context: .default) {
+                return Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude, created_by: created_by)
             }
         } catch {
             logger.error("\(String(reflecting: error))")
@@ -65,8 +68,8 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
         )
         var markers: [Marker] = []
         do {
-            for try await(id, marker_type, latitude, longitude) in stream.decode((UUID, String, Float, Float).self, context: .default) {
-                let marker = Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude)
+            for try await(id, marker_type, latitude, longitude, created_by) in stream.decode((UUID, String, Float, Float, UUID).self, context: .default) {
+                let marker = Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude, created_by: created_by)
                 markers.append(marker)
             }
         } catch {
@@ -121,8 +124,8 @@ struct MarkerPostgresRepository: MarkerRepository, Sendable {
             """,
             logger: self.logger
         )
-        for try await(id, marker_type, latitude, longitude) in stream.decode((UUID, String, Float, Float).self, context: .default) {
-            return Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude)
+        for try await(id, marker_type, latitude, longitude, created_by) in stream.decode((UUID, String, Float, Float, UUID).self, context: .default) {
+            return Marker(id: id, marker_type: Marker_Type(rawValue: marker_type)!, latitude: latitude, longitude: longitude, created_by: created_by)
         }
         return nil
     }

@@ -3,7 +3,7 @@ import Foundation
 /// Interface for storing and editing markers
 protocol MarkerRepository: Sendable {
     /// Create marker.
-    func create(marker_type: Marker_Type, latitude: Float, longitude: Float) async throws -> Marker
+    func create(marker_type: Marker_Type, latitude: Float, longitude: Float, created_by: UUID) async throws -> Marker
     /// Get marker
     func get(id: UUID) async throws -> Marker?
     /// List all markers

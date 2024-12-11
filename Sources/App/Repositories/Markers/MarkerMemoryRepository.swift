@@ -9,9 +9,9 @@ actor MarkerMemoryRepository: MarkerRepository {
     }
 
     /// Create marker.
-    func create(marker_type: Marker_Type, latitude: Float, longitude: Float) async throws -> Marker {
+    func create(marker_type: Marker_Type, latitude: Float, longitude: Float, created_by: UUID) async throws -> Marker {
         let id = UUID()
-        let marker = Marker(id: id, marker_type: marker_type, latitude: latitude, longitude: longitude)
+        let marker = Marker(id: id, marker_type: marker_type, latitude: latitude, longitude: longitude, created_by: created_by)
         self.markers[id] = marker
         return marker
     }

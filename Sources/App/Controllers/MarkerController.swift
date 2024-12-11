@@ -36,12 +36,13 @@ struct MarkerController<Repository: MarkerRepository> {
         let marker_type: String
         let latitude: Float
         let longitude: Float
+        let created_by: UUID
     }
 
     /// Create marker entrypoint
     @Sendable func create(request: Request, context: some RequestContext) async throws -> EditedResponse<Marker> {
         let request = try await request.decode(as: CreateRequest.self, context: context)
-        let marker = try await self.repository.create(marker_type: Marker_Type(rawValue: request.marker_type)!, latitude: request.latitude, longitude: request.longitude)
+        let marker = try await self.repository.create(marker_type: Marker_Type(rawValue: request.marker_type)!, latitude: request.latitude, longitude: request.longitude, created_by: request.created_by)
         return EditedResponse(status: .created, response: marker)
     }
 

@@ -10,17 +10,28 @@ let package = Package(
         .executable(name: "App", targets: ["App"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.4.0"),
-        .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.21.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird-auth.git", from: "2.0.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird-compression.git", from: "2.0.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird-fluent.git", from: "2.0.0-beta.2"),
+        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.48.5"),
+        .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.7.0"),
     ],
     targets: [
         .executableTarget(
             name: "App",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
+                .product(name: "FluentKit", package: "fluent-kit"),
                 .product(name: "Hummingbird", package: "hummingbird"),
-                .product(name: "PostgresNIO", package: "postgres-nio"),
+                .product(name: "HummingbirdBcrypt", package: "hummingbird-auth"),
+                .product(name: "HummingbirdAuth", package: "hummingbird-auth"),
+                .product(name: "HummingbirdBasicAuth", package: "hummingbird-auth"),
+                .product(name: "HummingbirdCompression", package: "hummingbird-compression"),
+                .product(name: "HummingbirdFluent", package: "hummingbird-fluent"),
+
             ],
             path: "Sources/App"
         ),
@@ -29,8 +40,8 @@ let package = Package(
             dependencies: [
                 .byName(name: "App"),
                 .product(name: "HummingbirdTesting", package: "hummingbird"),
-            ],
-            path: "Tests/AppTests"
+                .product(name: "HummingbirdAuthTesting", package: "hummingbird-auth"),
+            ]
         ),
     ]
 )

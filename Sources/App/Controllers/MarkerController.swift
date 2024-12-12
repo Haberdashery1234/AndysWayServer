@@ -1,38 +1,42 @@
+import FluentKit
 import Foundation
 import Hummingbird
+import HummingbirdAuth
+import HummingbirdFluent
+import PostgresNIO
 
-struct MarkerController<Repository: MarkerRepository> {
-    // Marker repository
-    let repository: Repository
+struct MarkerController {
+    struct MarkerContext: ChildRequestContext {
+        var coreContext: CoreRequestContextStorage
 
-    // return marker endpoints
-    var endpoints: RouteCollection<AppRequestContext> {
-        return RouteCollection(context: AppRequestContext.self)
-            .get(":id", use: self.get)
-            .get(use: self.list)
-            .post(use: self.create)
-            .patch(":id", use: self.update)
-            .delete(":id", use: self.delete)
-            .delete(use: self.deleteAll)
-    }
+        init(context: AppRequestContext) throws {
+            self.coreContext = context.coreContext
+        }
 
-    /// Delete all markers entrypoint
-    @Sendable func deleteAll(request: Request, context: some RequestContext) async throws -> HTTPResponse.Status {
-        try await self.repository.deleteAll()
-        return .ok
-    }
-
-    /// Delete marker entrypoint
-    @Sendable func delete(request: Request, context: some RequestContext) async throws -> HTTPResponse.Status {
-        let id = try context.parameters.require("id", as: UUID.self)
-        if try await self.repository.delete(id: id) {
-            return .ok
-        } else {
-            return .badRequest
+        var requestDecoder: MarkerAuthRequestDecoder {
+            MarkerAuthRequestDecoder()
         }
     }
 
-    struct CreateRequest: Decodable {
+    let fluent: Fluent
+    let sessionAuthenticator: SessionAuthenticator<AppRequestContext, UserRepository>
+
+    func addRoutes(to group: RouterGroup<AppRequestContext>) {
+        group
+            .add(middleware: self.sessionAuthenticator)
+            .group(context: MarkerContext.self)
+            .get(use: self.list)
+            .get(":id", use: self.get)
+            .post(use: self.create)
+            .delete(":id", use: self.deleteId)
+    }
+
+   /// Get list of markers entrypoint
+    @Sendable func list(_ request: Request, context: MarkerContext) async throws -> [Marker] {
+        return try await Marker.query(on: self.fluent.db()).all()
+    }
+
+    struct CreateMarkerRequest: ResponseCodable {
         let marker_type: String
         let latitude: Float
         let longitude: Float
@@ -40,41 +44,34 @@ struct MarkerController<Repository: MarkerRepository> {
     }
 
     /// Create marker entrypoint
-    @Sendable func create(request: Request, context: some RequestContext) async throws -> EditedResponse<Marker> {
-        let request = try await request.decode(as: CreateRequest.self, context: context)
-        let marker = try await self.repository.create(marker_type: Marker_Type(rawValue: request.marker_type)!, latitude: request.latitude, longitude: request.longitude, created_by: request.created_by)
-        return EditedResponse(status: .created, response: marker)
+    @Sendable func create(_ request: Request, context: MarkerContext) async throws -> EditedResponse<Marker> {
+        let markerRequest = try await request.decode(as: CreateMarkerRequest.self, context: context)
+        guard let _ = request.head.authority else { throw HTTPError(.badRequest, message: "No host header") }
+        let marker = Marker(marker_type: markerRequest.marker_type, latitude: markerRequest.latitude, longitude: markerRequest.longitude, created_by: markerRequest.created_by)
+        let db = self.fluent.db()
+        _ = try await marker.save(on: db)
+        return .init(status: .created, response: marker)
     }
 
-    struct UpdateRequest: Decodable {
-        let marker_type: String?
-        let latitude: Float?
-        let longitude: Float?
-    }
-
-    /// Update marker entrypoint
-    @Sendable func update(request: Request, context: some RequestContext) async throws -> Marker? {
+    @Sendable func get(_ request: Request, context: MarkerContext) async throws -> Marker? {
         let id = try context.parameters.require("id", as: UUID.self)
-        let request = try await request.decode(as: UpdateRequest.self, context: context)
-        guard let marker = try await self.repository.update(
-            id: id,
-            marker_type: Marker_Type(rawValue: request.marker_type!) ?? nil,
-            latitude: request.latitude,
-            longitude: request.longitude
-        ) else {
-            throw HTTPError(.badRequest)
+        return try await Marker.query(on: self.fluent.db())
+            .filter(\.$id == id)
+            .first()
+    }
+
+    /// Delete marker entrypoint
+    @Sendable func deleteId(_ request: Request, context: some RequestContext) async throws -> HTTPResponse.Status {
+        let id = try context.parameters.require("id", as: UUID.self)
+        let db = self.fluent.db()
+        guard let marker = try await Marker.query(on: db)
+            .filter(\.$id == id)
+            .first()
+        else {
+            throw HTTPError(.notFound)
         }
-        return marker
-    }
 
-    /// Get marker entrypoint
-    @Sendable func get(request: Request, context: some RequestContext) async throws -> Marker? {
-        let id = try context.parameters.require("id", as: UUID.self)
-        return try await self.repository.get(id: id)
-    }
-
-    /// Get list of markers entrypoint
-    @Sendable func list(request: Request, context: some RequestContext) async throws -> [Marker] {
-        return try await self.repository.list()
+        try await marker.delete(on: db)
+        return .ok
     }
 }

@@ -82,5 +82,5 @@ USER hummingbird:hummingbird
 EXPOSE 8080
 
 # Start the Hummingbird service when the image is run, default to listening on 8080 in production environment
-ENTRYPOINT ["./Markers"]
-CMD ["--hostname", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["./App"]
+CMD ["--hostname", "0.0.0.0", "--port", "8080", "--migrate"]

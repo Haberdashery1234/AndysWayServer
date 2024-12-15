@@ -16,8 +16,9 @@ struct UserRepository: UserSessionRepository, UserPasswordRepository {
     }
 
     func getUser(named email: String, context: UserRepositoryContext) async throws -> User? {
-        try await User.query(on: self.fluent.db())
+        let user = try await User.query(on: self.fluent.db())
             .filter(\.$email == email)
             .first()
+        return user
     }
 }

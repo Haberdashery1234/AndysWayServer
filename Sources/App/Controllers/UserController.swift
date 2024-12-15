@@ -22,13 +22,18 @@ struct UserController {
     }
 
     /// Create marker entrypoint
-    @Sendable func create(_ request: Request, context: some RequestContext) async throws -> EditedResponse<UserResponse> {
+    @Sendable func create(_ request: Request, context: Context) async throws -> EditedResponse<UserResponse> {
         let createUser = try await request.decode(as: CreateUserRequest.self, context: context)
 
         let user = try await User.create(
-            name: createUser.name,
+            display_name: createUser.display_name,
             email: createUser.email,
             password: createUser.password,
+            location_city: createUser.location_city,
+            location_state: createUser.location_state,
+            location_country: createUser.location_country,
+            created_on: createUser.created_on,
+
             db: self.fluent.db()
         )
 
@@ -37,10 +42,10 @@ struct UserController {
 
     /// Login user and create session
     /// Used in tests, as user creation is done by ``WebController.loginDetails``
-    @Sendable func login(_ request: Request, context: Context) async throws -> HTTPResponse.Status {
+    @Sendable func login(_ request: Request, context: Context) async throws -> EditedResponse<UserResponse> {
         guard let user = context.identity else { throw HTTPError(.unauthorized) }
         try context.sessions.setSession(user.requireID())
-        return .ok
+        return .init(status: .ok, response: UserResponse(from: user))
     }
 
     /// Login user and create session

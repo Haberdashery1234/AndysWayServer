@@ -21,7 +21,7 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
     let environment = Environment()
     let logger =  {
         var logger = Logger(label: "andys-way-server")
-        logger.logLevel = .debug
+        logger.logLevel = .trace
         return logger
     }()
 
@@ -30,9 +30,9 @@ public func buildApplication(_ arguments: some AppArguments) async throws -> som
         .postgres(
             configuration: .init(
                 hostname: environment.get("POSTGRES_HOST") ?? "localhost",
-                username: environment.get("POSTGRES_USER") ?? "markers",
+                username: environment.get("POSTGRES_USER") ?? "gofur_app",
                 password: environment.get("POSTGRES_PASSWORD") ?? "",
-                database: environment.get("POSTGRES_DB") ?? "markers",
+                database: environment.get("POSTGRES_DB") ?? "gofur",
                 tls: .disable
             )
         ),

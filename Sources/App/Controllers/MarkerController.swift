@@ -47,7 +47,7 @@ struct MarkerController {
     @Sendable func create(_ request: Request, context: MarkerContext) async throws -> EditedResponse<Marker> {
         let markerRequest = try await request.decode(as: CreateMarkerRequest.self, context: context)
         guard let _ = request.head.authority else { throw HTTPError(.badRequest, message: "No host header") }
-        let marker = Marker(marker_type: markerRequest.marker_type, latitude: markerRequest.latitude, longitude: markerRequest.longitude, created_by: markerRequest.created_by)
+        let marker = Marker(marker_type: markerRequest.marker_type, latitude: markerRequest.latitude, longitude: markerRequest.longitude, created_by: markerRequest.created_by, created_on: Date(), last_updated: Date())
         let db = self.fluent.db()
         _ = try await marker.save(on: db)
         return .init(status: .created, response: marker)
